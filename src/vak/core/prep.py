@@ -3,8 +3,10 @@ from pathlib import Path
 import warnings
 
 from .. import split
+from ..config.converters import expanded_user_path_str
 from ..io import dataframe
 from ..logging import log_or_print
+from ..validation import is_a_directory
 
 
 VALID_PURPOSES = frozenset(['eval',
@@ -35,7 +37,10 @@ def prep(data_dir,
     Parameters
     ----------
     data_dir : str, Path
-        path to directory with files from which to make dataset
+        path to directory with files from which to make dataset.
+        If this ends in '/**', then ``vak`` will recursively search
+        ``data_dir`` for audio / spectrogram array / annotation files
+        when ``prep``aring the dataset.
     purpose : str
         one of {'train', 'predict', 'learncurve'}
     output_dir : str
@@ -137,16 +142,13 @@ def prep(data_dir,
             else:
                 labelset = labelset_set
 
-    data_dir = Path(data_dir).expanduser().resolve()
-    if not data_dir.is_dir():
-        raise NotADirectoryError(
-            f'data_dir not found: {data_dir}'
-        )
+    data_dir = expanded_user_path_str(data_dir)
+    is_a_directory(data_dir)
 
     if output_dir:
         output_dir = Path(output_dir).expanduser().resolve()
     else:
-        output_dir = data_dir
+        output_dir = Path(data_dir) if not str(data_dir).endswith('/**') else Path(data_dir[:-2])
 
     if not output_dir.is_dir():
         raise NotADirectoryError(
@@ -168,7 +170,7 @@ def prep(data_dir,
         logger=logger, level='info'
     )
     # ---- figure out file name ----------------------------------------------------------------------------------------
-    data_dir_name = data_dir.name
+    data_dir_name = Path(data_dir).name if not str(data_dir).endswith('/**') else Path(data_dir[:-2]).name
     timenow = datetime.now().strftime('%y%m%d_%H%M%S')
     csv_fname_stem = f'{data_dir_name}_prep_{timenow}'
     csv_path = output_dir.joinpath(f'{csv_fname_stem}.csv')
