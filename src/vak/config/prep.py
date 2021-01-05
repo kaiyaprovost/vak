@@ -3,7 +3,7 @@ import attr
 from attr import converters, validators
 from attr.validators import instance_of
 
-from .converters import expanded_user_path, labelset_from_toml_value
+from .converters import expanded_user_path, expanded_user_path_str, labelset_from_toml_value
 from .validators import is_a_directory, is_a_file, is_audio_format, is_annot_format, is_spect_format
 
 
@@ -41,7 +41,10 @@ class PrepConfig:
     Attributes
     ----------
     data_dir : str
-        path to directory with files from which to make dataset
+        path to directory with files from which to make dataset.
+        If this ends in '/**', then ``vak`` will recursively search
+        ``data_dir`` for audio / spectrogram array / annotation files
+        when ``prep``aring the dataset.
     output_dir : str
         Path to location where data sets should be saved. Default is None,
         in which case data sets are saved in the current working directory.
@@ -71,7 +74,10 @@ class PrepConfig:
     test_dur : float
         total duration of test set, in seconds.
     """
-    data_dir = attr.ib(converter=expanded_user_path, validator=is_a_directory)
+    # note for data_dir we use expanded_user_path_str converter,
+    # since we want it to stay a string, to make sure any values
+    # ending with '/**' are handled correctly
+    data_dir = attr.ib(converter=expanded_user_path_str, validator=is_a_directory)
     output_dir = attr.ib(converter=expanded_user_path, validator=is_a_directory)
 
     audio_format = attr.ib(validator=validators.optional(is_audio_format), default=None)
