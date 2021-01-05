@@ -21,7 +21,20 @@ def comma_separated_list(value):
 
 
 def expanded_user_path(value):
+    """pathlib.Path with user expanded,
+    e.g. PosixPath('~/Documents') becomes PosixPath('/home/ubuntu/Documents')"""
     return Path(value).expanduser()
+
+
+def expanded_user_path_str(value):
+    """string path with user expanded,
+    e.g. '~/Documents' becomes '/home/ubuntu/Documents'
+
+    used for paths that need to remain strings,
+    e.g., '~/Documents/data/vocal/timit/**'
+    which indicates that vak.files.from_dir should search recursively
+    """
+    return str(expanded_user_path(value))
 
 
 def range_str(range_str, sort=True):
