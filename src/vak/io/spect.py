@@ -1,6 +1,4 @@
 """functions for dealing with vocalization datasets as pandas DataFrames"""
-from glob import glob
-import os
 from pathlib import Path
 
 import dask.bag as db
@@ -11,7 +9,9 @@ import pandas as pd
 from .. import constants
 from .. import files
 from ..annotation import source_annot_map
+from ..config.converters import expanded_user_path_str
 from ..logging import log_or_print
+from ..validation import is_a_directory
 
 
 # constant, used for names of columns in DataFrame below
@@ -45,7 +45,9 @@ def to_dataframe(spect_format,
     Parameters
     ----------
     spect_format : str
-        format of files containing spectrograms. One of {'mat', 'npz'}
+        format of files containing spectrograms. One of {'mat', 'npz'}.
+        If this ends in '/**', then this function will recursively search
+        ``spect_dir`` for spectrogram array files.
     spect_dir : str
         path to directory of files containing spectrograms as arrays.
         Default is None.
@@ -133,8 +135,10 @@ def to_dataframe(spect_format,
 
     # ---- get a list of spectrogram files + associated annotation files -----------------------------------------------
     if spect_dir:  # then get spect_files from that dir
+        spect_dir = expanded_user_path_str(spect_dir)
+        is_a_directory(spect_dir)
         # note we already validated format above
-        spect_files = glob(os.path.join(spect_dir, f'*{spect_format}'))
+        spect_files = files.from_dir(spect_dir, ext=spect_format)
 
     if spect_files:  # (or if we just got them from spect_dir)
         if annot_list:
