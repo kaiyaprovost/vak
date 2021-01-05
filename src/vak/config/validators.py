@@ -3,13 +3,18 @@ from pathlib import Path
 
 import toml
 
-from .. import constants
-from .. import models
+from .. import constants, validation, models
 
 
 def is_a_directory(instance, attribute, value):
     """check if given path is a directory"""
-    if not Path(value).is_dir():
+    try:
+        # use ``vak.validation.is_a_directory`` that handles the case where
+        # the directory ends in '/**' to indicate "recursively glob this directory";
+        # that function is used elsewhere in vak and doesn't need to be called
+        # with other elements of attrs classes (instance, attribute)
+        validation.is_a_directory(value)
+    except NotADirectoryError:
         raise NotADirectoryError(
             f'Value specified for {attribute.name} of {type(instance)} not recognized as a directory:\n'
             f'{value}'
