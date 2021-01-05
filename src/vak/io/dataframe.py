@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+from pathlib import Path
 
 from crowsetta import Transcriber
 import numpy as np
@@ -7,7 +8,9 @@ import numpy as np
 from . import audio, spect
 from .. import annotation
 from ..annotation import source_annot_map
+from ..config.converters import expanded_user_path_str
 from ..logging import log_or_print
+from ..validation import is_a_directory
 
 
 def from_files(data_dir,
@@ -29,7 +32,9 @@ def from_files(data_dir,
     Parameters
     ----------
     data_dir : str
-        path to directory with audio or spectrogram files from which to make dataset
+        path to directory with audio or spectrogram files from which to make dataset.
+        If this ends in '/**', then this function will recursively search
+        ``data_dir`` for audio / spectrogram array / annotation files.
     annot_format : str
         format of annotations. Any format that can be used with the
         crowsetta library is valid. Default is None.
@@ -91,13 +96,16 @@ def from_files(data_dir,
             else:
                 labelset = labelset_set
 
+    data_dir = expanded_user_path_str(data_dir)
+    is_a_directory(data_dir)
+
     if output_dir:
         if not os.path.isdir(output_dir):
             raise NotADirectoryError(
                 f'output_dir not found: {output_dir}'
             )
     elif output_dir is None:
-        output_dir = data_dir
+        output_dir = Path(data_dir) if not str(data_dir).endswith('/**') else Path(data_dir[:-2])
 
     if audio_format is None and spect_format is None:
         raise ValueError("Must specify either audio_format or spect_format")
